@@ -3,7 +3,8 @@
 #ini_set("display_errors", 1);
 # utilisation de sendmail ; 
 # https://www.youtube.com/watch?v=Fywr8gIVdLY
-$to = "kempenaer.natacha@outlook.fr";
+#TODO : automatiser + traitement erreurs 
+$to = "test@outlook.fr";
 $subject = "test mail php" ;
 $message = "Arrête de me répondre avec un 'non'";
 $headers = "Content-type : text/plain ; charset = utf8 \r\n";
