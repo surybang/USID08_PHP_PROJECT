@@ -14,7 +14,7 @@ while($ligne = fgetcsv($fichier,1024,",")){
 }
 fclose($fichier);
 
-$df = array(); 
+
 
 
 /* Affichage du fichier */
@@ -77,31 +77,40 @@ $df = array();
 # le sexe peut biaiser la moyenne lors du calcul des corr Pearson ? ; 
 
 
-#	Solution maison -> double boucle for , foreach ne serait pas mieux ?  ; 
-	
-for($i=1; $i < count($tab) ; $i++ ){ 
+# CODE TRAITEMENT 
+function cleanData($tab); {
+
+	for($i=1; $i < count($tab) ; $i++ ){ 
 	#print_r("i: ".$i."\n"); #debug 
-	for($j=1; $j < 37 ; $j++){  # Il faudrait réussir à trouver le nombre de colonnes automatiquement  
-	#	print_r("j: ".$j."\n"); #debug 
-	#	print_r($tab[$i][$j]); #debug 
-		if ($tab[$i][$j] == "J'adore" or $tab[$i][$j] == "Tout à fait d'accord" or $tab[$i][$j] == "46 et plus"){
-			$tab[$i][$j] = 5 ; 
-			#print("test"); #debug
+		for($j=1; $j < 37 ; $j++){  # Il faudrait réussir à trouver le nombre de colonnes automatiquement  
+		#	print_r("j: ".$j."\n"); #debug 
+		#	print_r($tab[$i][$j]); #debug 
+			if ($tab[$i][$j] == "J'adore" or $tab[$i][$j] == "Tout à fait d'accord" or $tab[$i][$j] == "46 et plus"){
+				$tab[$i][$j] = 5 ; 
+				#print("test"); #debug
+			}
+			elseif ($tab[$i][$j] == "J'aime bien" or $tab[$i][$j] == "D'accord" or $tab[$i][$j] == "36-45" ){
+				$tab[$i][$j] = 4 ; 
+			}
+			elseif ($tab[$i][$j] == "Bof" or $tab[$i][$j] == "Ne sait pas" or $tab[$i][$j] == "26-35"){
+				$tab[$i][$j] = 3 ; 
+			}
+			elseif ($tab[$i][$j] == "Je n'aime pas trop" or $tab[$i][$j] == "Pas d'accord" or $tab[$i][$j] == 'Femme' or $tab[$i][$j] == "18-25"){
+				$tab[$i][$j] = 2 ; 
+			}
+			elseif ($tab[$i][$j] == "Je n'aime pas du tout" or $tab[$i][$j] == "Pas du tout d'accord" or $tab[$i][$j] == "Homme" or $tab[$i][$j] == "Moins de 18 ans"){
+				$tab[$i][$j] = 1 ;  ## mettre le sexe en binaire ? ; 
+			}
 		}
-		elseif ($tab[$i][$j] == "J'aime bien" or $tab[$i][$j] == "D'accord" or $tab[$i][$j] == "36-45" ){
-			$tab[$i][$j] = 4 ; 
-		}
-		elseif ($tab[$i][$j] == "Bof" or $tab[$i][$j] == "Ne sait pas" or $tab[$i][$j] == "26-35"){
-			$tab[$i][$j] = 3 ; 
-		}
-		elseif ($tab[$i][$j] == "Je n'aime pas trop" or $tab[$i][$j] == "Pas d'accord" or $tab[$i][$j] == 'Femme' or $tab[$i][$j] == "18-25"){
-			$tab[$i][$j] = 2 ; 
-		}
-		elseif ($tab[$i][$j] == "Je n'aime pas du tout" or $tab[$i][$j] == "Pas du tout d'accord" or $tab[$i][$j] == "Homme" or $tab[$i][$j] == "Moins de 18 ans"){
-			$tab[$i][$j] = 1 ;  ## mettre le sexe en binaire ? ; 
-		}
-	}
-} 
+	} 
+	return $tab; 
+} # TODO : "je ne sais pas " etc... dans la recommandation 
+
+
+#execute function ; 
+cleanData($tab); 
+
+
 #Vérification des résultats ; 
    #print('<pre>');
    #print_r($tab);
@@ -109,6 +118,7 @@ for($i=1; $i < count($tab) ; $i++ ){
 
 
 /* Création du df */ 
+$df = array(); 
 $df = $tab;  # on fait une copie de tab pour pouvoir isoler les coefficients ; 
 for($i=0; $i < count($df); $i++){
 	for($j=0; $j <= 36 ; $j++){
@@ -116,6 +126,7 @@ for($i=0; $i < count($df); $i++){
 			unset($df[$i][$j]);
 		}
 	}
+	#DEBUG 
 	#echo "<pre>";
 	#print_r($df[$i]);
 	#echo "</pre>";
@@ -177,23 +188,6 @@ for($i=1;$i <= 18 ; $i++ ){
 print_r($val);
 print_r($df_corr);
 
-// $tableau = array() ; 
- #for($i=0;$i <= 2 ; $i++ ){
- 	 // for($j=3; $j < 37 ; $j++){
- 	 #$output = array_slice($tab[$i], 1, 34);
- 	 # récupérer les valeurs de output dans une liste classique 
- 	 #}
- // }
- 	#print('<pre>');
- 	#print_r($output);
- 	#print('</pre>');
- // for($i=1;$i <= 3 ; $i++ ){  
-	
-	// for($j=2; $j < 3 ; $j++){
- // 	 	Corr($tab[$i],$tab[$j]); 
- // 	}
- // }
-## erreur boucle car on lit un string ? ; 
 
 
 
@@ -201,32 +195,6 @@ print_r($df_corr);
 # Inclure le fichier php_mail.php ; 
 # TODO : Boucler quand columns(j)==37 pour récupérer l'adresse mail et envoyer la réponse 
 # La réponse = individu avec max corrélation et j == 36 ; 
-
-
-
-
-
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
