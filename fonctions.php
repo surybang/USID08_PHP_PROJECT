@@ -54,7 +54,7 @@ function cleanData($tab) {
 		}
 	} 
 	return $tab; 
-} # TODO : "je ne sais pas " etc... dans la recommandation 
+} 
 
 
 
@@ -65,23 +65,30 @@ Function print_df($x){
  	print_r($x);
  	print('</pre>');
 }
+
 /* Exporter une table au format .csv et choisir le nom */ 
 function exportCsv($data,$name){
 	$fp = fopen($name.'.csv', 'w');
+	if (isset($data)){
+		foreach ($data as $fields) 
+		{
+    		fputcsv($fp, $fields);
+		}
 
-	foreach ($data as $fields) 
-	{
-    	fputcsv($fp, $fields);
+		fclose($fp);
+
 	}
-
-	fclose($fp);
+	else {
+		throw new Exception ("données vide"); 
+	}
+	
 
 }
- 
+ /* Fonction des corrélations Pearson */ 
  function Corr($x, $y){
 
-	$length= count($x);
-	$mean1=array_sum($x) / $length;
+	$length= count($x);  # x et y font la même taille donc pas besoin de définir 2 tailles diff 
+	$mean1=array_sum($x) / $length; # somme des valeurs dans la liste $x / taille 
 	$mean2=array_sum($y) / $length;
 
 	$a=0;
@@ -90,13 +97,20 @@ function exportCsv($data,$name){
 	$a2=0;
 	$b2=0;
 
-	for($i=1;$i<$length;$i++)
+	for($i=0;$i<=$length-1;$i++)
 	{
-		$a=$x[$i]-$mean1;
-		$b=$y[$i]-$mean2;
-		$axb=$axb+($a*$b);
-		$a2=$a2+ pow($a,2);
-		$b2=$b2+ pow($b,2);
+		if (is_int($x[$i]) or is_int($y[$i]))
+		{
+			 
+			$a=$x[$i]-$mean1;
+			$b=$y[$i]-$mean2;
+			$axb=$axb+($a*$b);
+			$a2=$a2+ pow($a,2);
+			$b2=$b2+ pow($b,2);
+		}
+		else {
+			throw new Exception('x ou y doivent être numérique'); 
+		}
 	}
 
 	$corr= $axb / sqrt($a2*$b2);
@@ -116,27 +130,40 @@ function createDf($data){
 	$df = array(); 
 	$df = $data;  # on fait une copie de tab pour pouvoir isoler les coefficients et garder le fichier de données à l'état brut ; 
 
-
-	for($i=0; $i < count($df); $i++)
+	if (isset($data))
 	{
-		for($j=0; $j <= 36 ; $j++)
+		for($i=0; $i < count($df); $i++)
 		{
-			if ($j == 0 or $j==2 or $j == 35 or $j == 36 )
+			for($j=0; $j <= 36 ; $j++)
 			{
-				unset($df[$i][$j]);
+				if ($j == 0 or $j==2 or $j == 35 or $j == 36 )
+				{
+					unset($df[$i][$j]);
+				}
 			}
+			#DEBUG 
+			#echo "<pre>";
+			#print_r($df[$i]);
+			#echo "</pre>";
 		}
-		#DEBUG 
-		#echo "<pre>";
-		#print_r($df[$i]);
-		#echo "</pre>";
+
+	}else{
+		throw new Exception ('pas de données'); 
 	}
+	
 
 	return $df; 
 
 }
 
-/* Fonction des corrélations */ 
+// function addition($x,$y){
+// 	$x1=array_sum($x);
+// 	$y1=array_sum($y);
+// 	$sum = $x1 + $y1 ;
+// 	return $sum;
+// }
+
+
 function createMatrixCorr($data)
 {
 	$val = array() ; 
@@ -148,7 +175,7 @@ function createMatrixCorr($data)
   	  	$res = Corr($data[$i],$data[$j]);
   	  	array_push($val,$res);  
   	  	#echo "<pre>";
-  	  	#print_r("i : ".$i.' la corrélation avec '.$j.' est égale à : '.Corr($df[$i],$df[$j]));
+  	  	#print_r("i : ".$i.' la corrélation avec '.$j.' est égale à : '.Corr($data[$i],$data[$j]));
   	  	#echo "</pre>";
   	  }
 
@@ -161,11 +188,36 @@ return $matrix_corr;
 
 }
 
+
+// function createMatrixSum($data)
+// {
+// 	$val = array() ; 
+// 	$n = count($data)-1;
+// 	for($i=1;$i < count($data) ; $i++)
+//  	{
+//   	  for($j=1; $j < count($data) ; $j++) # - 1 on skip les titres 
+//   	  {
+//   	  	$res = Corr($data[$i],$data[$j]);
+//   	  	#array_push($val,$res);  
+//   	  	#echo "<pre>";
+//   	  	#print_r("i : ".$i.' la somme avec '.$j.' est égale à : '.addition($data[$i],$data[$j]));
+//   	  	#echo "</pre>";
+//   	  }
+
+//   }
+
+// #on casse l'array $val toutes les n valeurs pour refaire un array ; 
+// 	$matrix_sum = array_chunk($val,$n);
+
+// return $matrix_sum; 
+
+// }
+
 /* Tri des coefficients par ordre décroissant */
 function OrderMatrix($x){
 	for($i=0; $i < count($x); $i++)
 	{
-		for($j=0; $j < 69; $j++)  
+		for($j=0; $j < 37; $j++)  
 		{
 			if($x[$i][$j] == 1)  # on ne souhaite pas recommander ce que la personne a renseigné elle-même -> on modifie la val du coefficient ;
 			{
@@ -204,9 +256,9 @@ function  finalMatrix($reponse,$slice){
 	{
 		foreach($elem as $val)
 		{
-			if ($val == 0) # +1 pour éviter les en-têtes ; 
+			if ($val == 0)  
 			{
-				array_push($recommandation,$reponse[1][35]);
+				array_push($recommandation,$reponse[1][35]);# +1 pour éviter les en-têtes quand $val == 0;
 			}
 			else
 			{
@@ -221,13 +273,13 @@ function  finalMatrix($reponse,$slice){
 
 }
 
-
+/* Récupérer les recommandations personnalisés pour 1 participant */ 
 function getReco($reponse,$matrice,$email){
-	for($i=0;$i<count($reponse);$i++)
+	for($i=0;$i<count($reponse)-1;$i++)
 	{
 		for($j=1;$j<37;$j++)
 		{
-			if ($reponse[$i][$j] == $email)
+			if (strtolower($reponse[$i][$j]) == strtolower($email)) # on utilise l'email comme identifiant 
 			{
 				$reco = $matrice[$i];
 			}
@@ -236,19 +288,83 @@ function getReco($reponse,$matrice,$email){
 	return $reco ; 
 }
 
+/* Récupérer la colonne horodatage */ 
 function getHoro($reponse,$email){
 	for($i=0;$i<count($reponse);$i++)
 	{
 		for($j=1;$j<37;$j++)
 		{
-			if ($reponse[$i][$j] == $email)
-			{
-				$horo = $reponse[$i][0];
-			}
+			if (strtolower($reponse[$i][$j]) == strtolower($email))
+				{
+					$horo = $reponse[$i][0];
+				}	
 		} 
 	}
 	return $horo ; 
 }
+
+
+
+/* Récupérer la liste des adresses mails dans le fichier de base */ 
+function getListMail($tab) {
+	$lstMail=array();
+	
+	for($i=1;$i<count($tab);$i++)
+	{
+		array_push($lstMail,strtolower($tab[$i][36]));
+	}
+	return $lstMail;
+}
+
+/* Créer la liste de diffusion des mails avec les recommandations pour chaque adresse */ 
+// function createListeEnvoi($lstMail,$tab,$recommandations){
+// 	$listeEnvoi=array();
+// 	for($i=0;$i<count($lstMail)-1;$i++)
+// 	{
+// 		if (isset($tab[$i][36])){
+// 			array_push($listeEnvoi,getReco($tab,$recommandations,$lstMail[$i]));
+// 		}
+// 	}
+// 	return $listeEnvoi ;
+// }
+
+
+
+// // [START drive_download_file]
+// use Google\Client;
+// use Google\Service\Drive;
+// function downloadFile()
+//  {
+//     try {
+
+//       $client = new Client();
+//       $client->useApplicationDefaultCredentials();
+//       $client->addScope(Drive::DRIVE);
+//       $driveService = new Drive($client);
+//       $realFileId = readline("Enter File Id: ");
+//       $fileId = '0BwwA4oUTeiV1UVNwOHItT0xfa2M';
+//       $fileId = $realFileId;
+//       $response = $driveService->files->get($fileId, array(
+//           'alt' => 'media'));
+//       $content = $response->getBody()->getContents();
+//       return $content;
+
+//     } catch(Exception $e) {
+//       echo "Error Message: ".$e;
+//     }
+   
+// }
+// // [END drive_download_file]
+// require_once 'vendor/autoload.php';
+// downloadFile();
+
+
+// function exceptions_error_handler($severity, $message, $filename, $lineno) {
+//     throw new ErrorException($message, 0, $severity, $filename, $lineno);
+// }
+
+// set_error_handler('exceptions_error_handler');
+
 	
 
 ?>
