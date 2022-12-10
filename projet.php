@@ -11,7 +11,7 @@ include('php_mail.php');
 
 /* Lecture du fichier */
 # $tab = données du questionnaires brutes ; 
-$tab = openCsv("datanew",",");  
+$tab = openCsv("data_ano",",");  
 #print_df($tab);
 
 
