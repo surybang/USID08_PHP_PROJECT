@@ -10,8 +10,6 @@ include('fonctions.php');
 include('php_mail.php');
 
 /* Lecture du fichier */
-
-
 # $tab = données du questionnaires brutes ; 
 $tab = openCsv("datanew",",");  
 #print_df($tab);
@@ -25,19 +23,46 @@ $tab = cleanData($tab);
 #Vérification des résultats ; 
 #print_df($tab);
 
-$df = createDf($tab); 
+try{
+	$df = createDf($tab); 
+} catch (Exception $e){
+	echo 'Exception reçue : ',  $e->getMessage(), "\n";
+}
 $df = array_map('array_values', $df); #reset de l'index suite à la suppression de certaines valeurs; 
-#print_df($df);
 /* Export pour vérification sur Excel */
-// exportCsv($df,"coefficients_pour_corr");
+// try{
+//  exportCsv($df,"coefficients_pour_corr");
+// } catch (Exception $e) {
+// 	echo 'Exception reçue : ',  $e->getMessage(), "\n";
+// }
+
+
+/* Bug décalage du calcul des coefficients */ 
+#$testSum = array(2,	5,	5,	5,	3,	5,	5,	3,	4,	4,	4,	5,	5,	2,	3,	5,	5,	2,	5,	5,	1,	3,	5,	5,	1,	4,	3,	4,	4,	4,	5,	2,	4);
+#$testSum2 = array(2,	4,	5,	5,	4,	5,	5,	3,	4,	5,	5,	4,	5,	3,	5,	5,	5,	4,	5,	5,	4,	5,	4,	5,	5,	5,	4,	5,	5,	1,	5,	3,	5);
+#$testSum = addition($testSum,$testSum2);
+#$testCorr = Corr($testSum,$testSum2);
+#print_df($testSum);
+#$somme = createMatrixSum($df);
+#print_df($somme);
+
   
 /* Création de la matrice de corrélation*/
-$matrix_corr = createMatrixCorr($df); 
+try{
+	$matrix_corr = createMatrixCorr($df); 
+} catch (Exception $e) {
+    echo 'Exception reçue : ',  $e->getMessage(), "\n";
+}
 /* Affichage */
- print_df($matrix_corr);
+#print_df($matrix_corr);
 
 /* Export */ 
-// exportCsv($matrix_corr,"matrice_des_corrélations");
+// try{
+// 	exportCsv($matrix_corr,"matrice_des_corrélations");
+// }catch (Exception $e) {
+//     echo 'Exception reçue : ',  $e->getMessage(), "\n";
+// }
+
 
 
 /* Tri de la matrice par ordre décroissant */
@@ -63,66 +88,116 @@ $slice = sliceMatrix($matrix_corr);
 on affiche le contenu de tableau_questionnaire[clé_tableau_corrélation][35] */
 
 
-$recommandation = finalMatrix($tab,$slice); 
-#print_df($recommandation); 
+$recommandations = finalMatrix($tab,$slice); 
+#print_df($recommandations); 
 /* Export */ 
-// exportCsv($recommandation,"matrice_finale");
+// exportCsv($recommandations,"matrice_finale");
 
 
-#$test = getReco($tab,$recommandation,'thibaut.montagut@gmail.com'); 
+#$test = getReco($tab,$recommandations,'hos.fabien@outlook.com'); 
 #print_df($test);
 
 /* Récupérer les adresses mails */
-$lstMail=array();
-for($i=1;$i<count($tab);$i++){
-	array_push($lstMail,$tab[$i][36]);
-}
-
-#print_r($lstMail);
+$lstMail = getListMail($tab); 
+#print_df($lstMail);
 
 
-$listeEnvoi=array();
-for($i=0;$i<count($lstMail)-1;$i++)
-{
-	if (isset($tab[$i][36])){
-		array_push($listeEnvoi,getReco($tab,$recommandation,$lstMail[$i]));
-
-	}
-
-}
+#Pas nécessaire finalement ; 
+#$listeEnvoi = createListeEnvoi($lstMail,$tab,$recommandations); 
 #print_df($listeEnvoi);
 #print_df($tab);
 
-$var = $_POST['mail'];
-$test2 = "Votre adresse n'a pas été retrouvé dans notre bdd"; 
-// for($i=0;$i<count($lstMail)-1;$i++){
-// 	if($lstMail[$i] == $var ){
-// 		$test2 = getReco($tab,$recommandation,$var); 
-// 	}}
-if (in_array($var, $lstMail)){
-	$test2 = getReco($tab,$recommandation,$var); 
-	$test3 = getHoro($tab,$var); 
+
+
+
+#Récupère le contenu du formulaire html ; 
+$var = strtolower($_POST['mail']);
+
+#initialisation des variables pour éviter des erreurs ; 
+$reponse = "Votre adresse n'a pas été retrouvé dans notre bdd";
+$reponse2 = '' ;  
+
+if (in_array($var, $lstMail))
+{
+	$reponse = getReco($tab,$recommandations,$var); 
+	$reponse2 = getHoro($tab,$var); 
+}
+
+// for($i=0; $i < $lstMail; $i++)
+// {
+// 	if (isset($lstMail[$i]))
+// 	{
+// 		mailSend($lstMail[$i],$reponse);
+// 	}
+//   }
+
+	
+
+if (in_array($var,$lstMail)){
+echo "
+<meta charset='utf-8'>
+    <link rel='stylesheet' href='css/style.css'>
+    <link rel='preconnect' href='https://fonts.googleapis.com'>
+    <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+    <link href='https://fonts.googleapis.com/css2?family=Roboto&display=swap' rel='stylesheet'>
+ <body>
+    <article>
+    <section>
+    <h1>Vos recommandations </h1>
+    <p>Bonjour <b>".$var."</b> merci d'avoir participé à ce questionnaire le ".$reponse2." vos recommandations sont les suivantes :</p>
+    <table>
+    <tr>
+    <th><a href='https://www.google.com/search?q=vacances+".$reponse[0]."'target='_blank'</a>".$reponse[0]."</th>
+    
+    
+    <th><a href='https://www.google.com/search?q=vacances+".$reponse[1]."'target='_blank'</a>".$reponse[1]."</th>
+    
+    
+    <th><a href='https://www.google.com/search?q=vacances+".$reponse[2]."'target='_blank'</a>".$reponse[2]."</th>
+  
+    </table>
+
+    <p id='middle'> Nous sommes curieux de connaître la pertinence des recommandations que vous avez reçu, n'hésitez pas à nous recontacter à l'adresse : <b>hos.fabien@outlook.com</b> / <b>yasminedarwish@outlook.fr</b> pour nous faire part de votre avis. </p>
+    <p > Pour rappel, ces recommandations sont basées sur la participation des autres utilisateurs, il se peut que l'on vous  recommande la même destination que vous aviez partagé car un autre utilisateur l'a fait, lui aussi ! </p>
+    <p id='end'> Le code du projet est disponible <a href='https://github.com/surybang/USID08_PHP_PROJECT/'> ici</a></p>
+    <a href = 'https://formation.cnam.fr/rechercher-par-discipline/master-mega-donnees-et-analyse-sociale-medas--1085595.kjsp' target='_blank' </a> <img src='img/CNAM_Logo.svg.png' alt='logo cnam'>
+
+    </section>
+    
+  
+    </article>
+
+
+  </body>
+
+";
+}else {
+	echo "
+	<meta charset='utf-8'>
+    <link rel='stylesheet' href='css/style.css'>
+    <link rel='preconnect' href='https://fonts.googleapis.com'>
+    <link rel='preconnect' href='https://fonts.gstatic.com' crossorigin>
+    <link href='https://fonts.googleapis.com/css2?family=Roboto&display=swap' rel='stylesheet'>
+ <body>
+    <article>
+    <section>
+    <h1>Adresse mail non reconnue</h1>
+    <p>Bonjour <b>".$var."</b> merci de remplir <a href = 'https://docs.google.com/forms/d/1Jsj4RzD522fPebKaaCMOqOcKUvm2egKqyvcTTctMKTY' target='_blank'>le formulaire </a>, nous n'avons pas pu retrouver vos résultats dans nos données.</p>
+    
+    <a href = 'https://formation.cnam.fr/rechercher-par-discipline/master-mega-donnees-et-analyse-sociale-medas--1085595.kjsp' target='_blank' </a> <img src='img/CNAM_Logo.svg.png' alt='logo cnam'>
+
+    </section>
+    
+  
+    </article>
+
+
+  </body>
+
+";
 }
 
 
-
-
-print_df($test2); 
-
-
-print("Bonjour ".$var." merci d'avoir participé à ce questionnaire le ".$test3." tes recommandations sont les suivantes : ");
-echo "<br>";
-print('1er  choix : '.$test2[0]); 
-echo "<br>";
-print('2eme choix : '.$test2[1]); 
-echo "<br>";
-print('3eme choix : '.$test2[2]); 
-echo "<br>";
-
-/* 			Partie envoie de l'email 							*/ 
-# Inclure le fichier php_mail.php ; 
-# TODO : Boucler quand columns(j)==37 pour récupérer l'adresse mail et envoyer la réponse 
-# La réponse = individu avec max corrélation et j == 36 ; 
 
 
 
