@@ -1,10 +1,4 @@
 
-<?php 
-ini_set("display_errors", 1);
-# utilisation de sendmail ; 
-# https://www.youtube.com/watch?v=Fywr8gIVdLY ;
-
-
 
 <?php 
 ini_set("display_errors", 1);
@@ -36,5 +30,3 @@ function mailSend($adr,$reco){
 
 ?>
 
-
-?>
